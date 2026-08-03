@@ -1,0 +1,90 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: kb-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: kb-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: kb-backend
+    depends_on:
+      - mongo
+      - redis
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongo:27017/kb_chatbot
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change_this_super_secret_value}
+      - JWT_EXPIRES_IN=1d
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@example.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-Admin@12345}
+      - FRONTEND_ORIGIN=${FRONTEND_ORIGIN:-http://localhost:3001}
+      - UPLOAD_DIR=uploads
+      - CHANNEL_PDF_REQUEST=pdf_process_requests
+      - CHANNEL_PDF_RESPONSE=pdf_process_responses
+      - CHANNEL_QUESTION_REQUEST=question_requests
+      - CHANNEL_QUESTION_RESPONSE=question_responses
+      - REDIS_TIMEOUT_MS=300000
+    volumes:
+      - backend_uploads:/app/uploads
+    restart: unless-stopped
+
+  python-ai:
+    build: ./python-ai
+    container_name: kb-python-ai
+    depends_on:
+      - redis
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - CHANNEL_PDF_REQUEST=pdf_process_requests
+      - CHANNEL_PDF_RESPONSE=pdf_process_responses
+      - CHANNEL_QUESTION_REQUEST=question_requests
+      - CHANNEL_QUESTION_RESPONSE=question_responses
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_CHAT_MODEL=${OPENAI_CHAT_MODEL:-gpt-4o-mini}
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-huggingface}
+      - HF_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+      - CHROMA_PERSIST_DIR=/app/chroma_db
+      - CHUNK_SIZE=1000
+      - CHUNK_OVERLAP=150
+      - TOP_K=4
+      - AI_SERVICE_PORT=8000
+    volumes:
+      - backend_uploads:/app/uploads
+      - chroma_data:/app/chroma_db
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:5000}
+    container_name: kb-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3001:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:5000}
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+  backend_uploads:
+  chroma_data:
