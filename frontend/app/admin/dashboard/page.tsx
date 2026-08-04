@@ -31,7 +31,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8 pb-10">
       <div>
-        <h1 className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
+        <h1 className="bg-gradient-to-r from-violet-600 to-indigo-600 dark:from-violet-400 dark:to-indigo-400 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
           Dashboard Overview
         </h1>
         <p className="text-muted-foreground mt-2">Metrics and recent activity across your knowledge base.</p>
@@ -53,7 +53,7 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold tracking-tight text-white">{stats?.totalPdfs ?? "—"}</div>
+            <div className="text-4xl font-bold tracking-tight text-foreground">{stats?.totalPdfs ?? "—"}</div>
           </CardContent>
         </Card>
 
@@ -66,7 +66,7 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold tracking-tight text-white">{stats?.totalChatSessions ?? "—"}</div>
+            <div className="text-4xl font-bold tracking-tight text-foreground">{stats?.totalChatSessions ?? "—"}</div>
           </CardContent>
         </Card>
 
@@ -79,13 +79,13 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold tracking-tight text-white">{stats?.totalQuestionsAsked ?? "—"}</div>
+            <div className="text-4xl font-bold tracking-tight text-foreground">{stats?.totalQuestionsAsked ?? "—"}</div>
           </CardContent>
         </Card>
       </div>
 
       <Card className="glass-card">
-        <CardHeader className="border-b border-white/5 pb-4">
+        <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4">
           <div className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-primary" />
             <CardTitle className="text-lg font-semibold">Recently Uploaded Documents</CardTitle>
@@ -97,7 +97,7 @@ export default function DashboardPage() {
               stats.recentDocuments.map((doc, i) => (
                 <div 
                   key={doc._id} 
-                  className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-4 transition-all hover:bg-white/[0.04] animate-slide-up"
+                  className="flex items-center justify-between rounded-xl border border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02] p-4 transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.04] animate-slide-up"
                   style={{ animationDelay: `${i * 0.1}s` }}
                 >
                   <div className="flex items-center gap-4">
@@ -105,7 +105,7 @@ export default function DashboardPage() {
                       <FileText className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="font-medium text-white/90">{doc.originalName}</p>
+                      <p className="font-medium text-foreground">{doc.originalName}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {new Date(doc.uploadDate).toLocaleString()}
                       </p>
