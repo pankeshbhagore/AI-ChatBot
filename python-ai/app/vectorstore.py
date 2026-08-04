@@ -30,11 +30,12 @@ def _get_embedder():
         _embedder = OpenAIEmbeddings(api_key=settings.openai_api_key)
     else:
         # Free, local, no API key required.
-        from langchain_community.embeddings import HuggingFaceEmbeddings
+        from langchain_huggingface import HuggingFaceEmbeddings
 
         _embedder = HuggingFaceEmbeddings(
             model_name=settings.hf_embedding_model,
-            model_kwargs={'device': 'cpu'}
+            model_kwargs={'device': 'cpu'},
+            encode_kwargs={'device': 'cpu'}
         )
 
     return _embedder
