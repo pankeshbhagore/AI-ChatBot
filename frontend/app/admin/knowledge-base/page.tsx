@@ -74,7 +74,7 @@ export default function KnowledgeBasePage() {
     <div className="space-y-8 pb-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
+          <h1 className="bg-gradient-to-r from-violet-600 to-indigo-600 dark:from-violet-400 dark:to-indigo-400 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
             Knowledge Base
           </h1>
           <p className="text-muted-foreground mt-2">Manage your uploaded PDFs and vector embeddings.</p>
@@ -100,7 +100,7 @@ export default function KnowledgeBasePage() {
       )}
 
       <Card className="glass-card">
-        <CardHeader className="border-b border-white/5 pb-4">
+        <CardHeader className="border-b border-black/5 dark:border-white/5 pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Database className="h-5 w-5 text-primary" />
@@ -110,7 +110,7 @@ export default function KnowledgeBasePage() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search PDFs..."
-                className="pl-9 bg-white/5 border-white/10 focus:border-primary/50"
+                className="pl-9 bg-black/5 border-black/10 dark:bg-white/5 dark:border-white/10 focus:border-primary/50"
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -123,7 +123,7 @@ export default function KnowledgeBasePage() {
         <CardContent className="pt-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="text-xs uppercase text-muted-foreground border-b border-white/5">
+              <thead className="text-xs uppercase text-muted-foreground border-b border-black/5 dark:border-white/5">
                 <tr>
                   <th className="py-4 px-4 font-medium">Name</th>
                   <th className="py-4 px-4 font-medium">Size</th>
@@ -133,17 +133,17 @@ export default function KnowledgeBasePage() {
                   <th className="py-4 px-4 font-medium text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-black/5 dark:divide-white/5">
                 {documents.map((doc, i) => (
                   <tr 
                     key={doc._id} 
-                    className="group hover:bg-white/[0.02] transition-colors animate-slide-up"
+                    className="group hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors animate-slide-up"
                     style={{ animationDelay: `${i * 0.05}s` }}
                   >
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
                         <FileText className="h-4 w-4 text-primary opacity-70" />
-                        <span className="font-medium text-white/90">{doc.originalName}</span>
+                        <span className="font-medium text-foreground">{doc.originalName}</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-muted-foreground">{(doc.fileSize / 1024).toFixed(0)} KB</td>
@@ -175,7 +175,7 @@ export default function KnowledgeBasePage() {
                         <Button 
                           variant="outline" 
                           size="icon" 
-                          className="h-8 w-8 bg-transparent border-white/10 hover:bg-white/10 hover:text-primary transition-colors"
+                          className="h-8 w-8 bg-transparent border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 hover:text-primary transition-colors"
                           onClick={() => handleReprocess(doc._id)} 
                           title="Reprocess"
                         >
@@ -184,7 +184,7 @@ export default function KnowledgeBasePage() {
                         <Button 
                           variant="outline" 
                           size="icon" 
-                          className="h-8 w-8 bg-transparent border-white/10 hover:bg-destructive/20 hover:text-destructive hover:border-destructive/30 transition-colors"
+                          className="h-8 w-8 bg-transparent border-black/10 dark:border-white/10 hover:bg-destructive/10 dark:hover:bg-destructive/20 hover:text-destructive hover:border-destructive/30 transition-colors"
                           onClick={() => handleDelete(doc._id)} 
                           title="Delete"
                         >
