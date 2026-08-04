@@ -132,11 +132,11 @@ export default function ChatPage() {
             <div className="flex h-[70vh] flex-col items-center justify-center text-center animate-fade-in">
               <div className="relative mb-6">
                 <div className="absolute inset-0 animate-pulse rounded-full bg-violet-500/20 blur-3xl"></div>
-                <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl">
+                <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 backdrop-blur-xl shadow-2xl">
                   <Sparkles className="h-10 w-10 text-violet-400" />
                 </div>
               </div>
-              <h2 className="mb-2 text-2xl font-semibold tracking-tight text-white/90">How can I help you today?</h2>
+              <h2 className="mb-2 text-2xl font-semibold tracking-tight text-foreground">How can I help you today?</h2>
               <p className="text-muted-foreground max-w-sm">
                 Ask me anything about the documents in the knowledge base.
               </p>
@@ -170,7 +170,7 @@ export default function ChatPage() {
               e.preventDefault();
               sendMessage(input);
             }}
-            className="flex items-center gap-3 rounded-2xl bg-white/[0.03] p-2 pl-4 border border-white/[0.08] shadow-2xl backdrop-blur-xl transition-all focus-within:border-primary/50 focus-within:bg-white/[0.05]"
+            className="flex items-center gap-3 rounded-2xl bg-black/[0.03] dark:bg-white/[0.03] p-2 pl-4 border border-black/[0.08] dark:border-white/[0.08] shadow-2xl backdrop-blur-xl transition-all focus-within:border-primary/50 focus-within:bg-black/[0.05] dark:focus-within:bg-white/[0.05]"
           >
             <Input
               value={input}

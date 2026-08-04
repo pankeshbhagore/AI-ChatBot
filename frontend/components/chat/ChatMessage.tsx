@@ -22,8 +22,8 @@ export function ChatMessage({ role, content, sources }: ChatMessageProps) {
         {/* Avatar */}
         <div className="mt-1 flex-shrink-0">
           {isUser ? (
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 border border-white/20">
-              <User className="h-4 w-4 text-white/70" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20">
+              <User className="h-4 w-4 text-foreground/70" />
             </div>
           ) : (
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 shadow-md shadow-violet-500/20">
@@ -38,7 +38,7 @@ export function ChatMessage({ role, content, sources }: ChatMessageProps) {
             "rounded-2xl px-5 py-4 text-[15px] shadow-sm transition-all",
             isUser 
               ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-tr-sm shadow-violet-500/10" 
-              : "bg-white/[0.04] backdrop-blur-xl border border-white/[0.08] text-white/90 rounded-tl-sm"
+              : "bg-black/[0.03] dark:bg-white/[0.04] backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] text-foreground rounded-tl-sm"
           )}
         >
           <div className="prose prose-sm max-w-none dark:prose-invert">
@@ -46,9 +46,9 @@ export function ChatMessage({ role, content, sources }: ChatMessageProps) {
           </div>
 
           {!isUser && sources && sources.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2 border-t border-white/10 pt-3">
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-black/10 dark:border-white/10 pt-3">
               {sources.map((s, i) => (
-                <Badge key={i} variant="secondary" className="bg-white/5 border-white/10 hover:bg-white/10 text-xs px-2 py-0.5 font-normal text-muted-foreground">
+                <Badge key={i} variant="secondary" className="bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 text-xs px-2 py-0.5 font-normal text-muted-foreground">
                   {s.documentName}
                   {s.page ? ` · p.${s.page}` : ""}
                 </Badge>

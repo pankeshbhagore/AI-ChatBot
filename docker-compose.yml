@@ -38,7 +38,7 @@ services:
       - CHANNEL_PDF_RESPONSE=pdf_process_responses
       - CHANNEL_QUESTION_REQUEST=question_requests
       - CHANNEL_QUESTION_RESPONSE=question_responses
-      - REDIS_TIMEOUT_MS=300000
+      - REDIS_RESPONSE_TIMEOUT_MS=300000
     volumes:
       - backend_uploads:/app/uploads
     restart: unless-stopped

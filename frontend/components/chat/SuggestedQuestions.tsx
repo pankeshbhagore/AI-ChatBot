@@ -12,7 +12,7 @@ export function TypingIndicator() {
             <Sparkles className="h-4 w-4 text-white animate-pulse" />
           </div>
         </div>
-        <div className="flex items-center gap-1.5 rounded-2xl rounded-tl-sm bg-white/[0.04] backdrop-blur-xl border border-white/[0.08] px-5 py-4">
+        <div className="flex items-center gap-1.5 rounded-2xl rounded-tl-sm bg-black/[0.03] dark:bg-white/[0.04] backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] px-5 py-4">
           <span className="typing-dot h-2 w-2 rounded-full bg-violet-400" />
           <span className="typing-dot h-2 w-2 rounded-full bg-violet-400" />
           <span className="typing-dot h-2 w-2 rounded-full bg-violet-400" />
@@ -42,7 +42,7 @@ export function SuggestedQuestions({
           <button
             key={i}
             onClick={() => onSelect(q)}
-            className="group relative rounded-full bg-white/[0.03] px-4 py-2 text-sm text-white/80 border border-white/10 transition-all duration-300 hover:scale-105 hover:bg-white/[0.08] hover:text-white hover:border-violet-500/50 hover:shadow-[0_0_15px_rgba(139,92,246,0.15)]"
+            className="group relative rounded-full bg-black/[0.03] dark:bg-white/[0.03] px-4 py-2 text-sm text-foreground/80 border border-black/10 dark:border-white/10 transition-all duration-300 hover:scale-105 hover:bg-black/[0.08] dark:hover:bg-white/[0.08] hover:text-foreground hover:border-violet-500/50 hover:shadow-[0_0_15px_rgba(139,92,246,0.15)]"
           >
             {q}
           </button>
