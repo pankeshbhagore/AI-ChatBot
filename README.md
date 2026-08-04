@@ -132,16 +132,7 @@ npm run dev # Runs on http://localhost:3000
 - **Architecture Details & Database Schema**: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - **API Reference**: [`docs/API.md`](docs/API.md)
 
-## ✅ Assessment Checklist
+## 🎥 Demonstration Video
 
-- [x] Public GitHub repository with complete source code.
-- [x] Professional README with setup instructions.
-- [x] `.env.example` files provided for all services.
-- [x] Detailed Architecture diagram and documentation (`docs/ARCHITECTURE.md`).
-- [x] Comprehensive API documentation (`docs/API.md`).
-- [x] Microservices architecture strictly enforced (Redis Pub/Sub only).
-- [x] RAG implementation with source citations and suggested follow-ups.
-- [x] Streaming responses implemented via SSE.
-- [ ] Record a 5–10 min video demonstrating the system (Overview, Architecture, Code Walkthrough, Admin Demo, Chatbot Demo) and paste the link below.
-
-**Video Link**: `[Add Video Link Here]`
+Watch the full system walkthrough, architecture explanation, and demonstration here:
+**[View Project Demonstration Video](https://drive.google.com/file/d/1_-iGhQzA0pNWJxvqTsy3p9Mg4pP7D_ET/view?usp=drivesdk)**
