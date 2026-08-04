@@ -67,3 +67,21 @@ export async function chatHistory(req: Request, res: Response) {
   const history = await Chat.find({ sessionId }).sort({ timestamp: 1 });
   return res.json({ success: true, history });
 }
+
+export async function listSessions(req: Request, res: Response) {
+  const sessions = await Chat.aggregate([
+    { $sort: { timestamp: 1 } },
+    {
+      $group: {
+        _id: "$sessionId",
+        firstQuestion: { $first: "$question" },
+        messageCount: { $sum: 1 },
+        startTime: { $first: "$timestamp" },
+        lastTime: { $last: "$timestamp" },
+      },
+    },
+    { $sort: { lastTime: -1 } },
+  ]);
+
+  return res.json({ success: true, data: sessions });
+}

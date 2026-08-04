@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { Send, Sparkles } from "lucide-react";
+import { Send, Sparkles, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChatMessage } from "@/components/chat/ChatMessage";
@@ -123,6 +123,16 @@ export default function ChatPage() {
           <a href="/" className="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors text-foreground/70 hover:bg-black/10 dark:hover:bg-white/10 hover:text-foreground px-3">
             Home
           </a>
+          <button
+            onClick={() => {
+              sessionStorage.removeItem("kb-chat-session-id");
+              window.location.reload();
+            }}
+            className="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors bg-violet-600/10 text-violet-600 hover:bg-violet-600/20 dark:bg-violet-500/20 dark:text-violet-400 dark:hover:bg-violet-500/30 px-3 gap-1.5"
+          >
+            <Plus className="h-4 w-4" />
+            New Chat
+          </button>
         </div>
       </header>
 

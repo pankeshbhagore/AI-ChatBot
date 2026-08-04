@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, FileText, LogOut, ExternalLink, Sparkles, Menu, X } from "lucide-react";
+import { LayoutDashboard, FileText, LogOut, ExternalLink, Sparkles, Menu, X, MessageSquare } from "lucide-react";
 import { API_BASE_URL } from "@/lib/api";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -25,6 +25,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navItems = [
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/knowledge-base", label: "Knowledge Base", icon: FileText },
+    { href: "/admin/chats", label: "Chat History", icon: MessageSquare },
   ];
 
   const sidebarContent = (
