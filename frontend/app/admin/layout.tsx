@@ -35,7 +35,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Sparkles className="h-5 w-5 text-white" />
         </div>
         <span className="bg-gradient-to-r from-violet-600 to-indigo-600 dark:from-violet-400 dark:to-indigo-400 bg-clip-text text-xl font-bold text-transparent">
-          KB Admin
+          Admin
         </span>
         {/* Close button — visible only on mobile */}
         <button
@@ -131,7 +131,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Menu className="h-5 w-5" />
           </button>
           <span className="bg-gradient-to-r from-violet-600 to-indigo-600 dark:from-violet-400 dark:to-indigo-400 bg-clip-text text-lg font-bold text-transparent">
-            KB Admin
+            Admin
           </span>
         </div>
 
