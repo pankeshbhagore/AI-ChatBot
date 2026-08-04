@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { askQuestion, chatHistory, listSessions } from "../controllers/chat.controller";
+import { askQuestion, chatHistory, listSessions, deleteSession } from "../controllers/chat.controller";
 import { chatLimiter } from "../middleware/rateLimiter";
 import { requireAuth } from "../middleware/auth";
 
@@ -11,5 +11,6 @@ router.get("/history/:sessionId", chatHistory);
 
 // Admin only
 router.get("/sessions", requireAuth, listSessions);
+router.delete("/sessions/:sessionId", requireAuth, deleteSession);
 
 export default router;

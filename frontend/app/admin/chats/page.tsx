@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MessageSquare, Clock, ArrowRight } from "lucide-react";
+import { MessageSquare, Clock, ArrowRight, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiFetch } from "@/lib/api";
 
@@ -30,6 +30,16 @@ export default function ChatHistoryPage() {
         setLoading(false);
       });
   }, []);
+
+  async function handleDelete(sessionId: string) {
+    if (!confirm("Are you sure you want to permanently delete this chat session?")) return;
+    try {
+      await apiFetch(`/api/chat/sessions/${sessionId}`, { method: "DELETE" });
+      setSessions((prev) => prev.filter((s) => s._id !== sessionId));
+    } catch (err: any) {
+      alert(err.message || "Failed to delete session");
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -77,13 +87,22 @@ export default function ChatHistoryPage() {
                       ID: {session._id.substring(0, 8)}...
                     </p>
                   </div>
-                  <Link
-                    href={`/admin/chats/${session._id}`}
-                    className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors bg-black/5 text-foreground hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 px-4 gap-2 opacity-0 group-hover:opacity-100 focus:opacity-100"
-                  >
-                    View
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
+                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => handleDelete(session._id)}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      title="Delete Session"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                    <Link
+                      href={`/admin/chats/${session._id}`}
+                      className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors bg-black/5 text-foreground hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 px-4 gap-2"
+                    >
+                      View
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>

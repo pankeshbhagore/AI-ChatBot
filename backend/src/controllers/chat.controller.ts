@@ -85,3 +85,9 @@ export async function listSessions(req: Request, res: Response) {
 
   return res.json({ success: true, data: sessions });
 }
+
+export async function deleteSession(req: Request, res: Response) {
+  const { sessionId } = req.params;
+  await Chat.deleteMany({ sessionId });
+  return res.json({ success: true, message: "Session deleted successfully" });
+}
