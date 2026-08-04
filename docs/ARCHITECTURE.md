@@ -1,129 +1,180 @@
-# Architecture
+# 🏛️ System Architecture
 
-## High-level system diagram
+This document outlines the high-level architecture, the AI agent workflow, the message broker contracts, and the database schemas for the PDF Knowledge Base AI Chatbot.
 
-```
-┌──────────────────┐
-│  Next.js Frontend │  (App Router, TS, Tailwind, shadcn-style UI)
-│  - /admin/*        │  Admin panel (login, dashboard, KB management)
-│  - /chat           │  Public chatbot (SSE streaming, markdown, sources)
-└─────────┬─────────┘
-          │ REST + SSE (HTTP)
-          ▼
-┌──────────────────┐
-│ Node.js Backend    │  (Express + TypeScript)
-│  - JWT auth         │
-│  - PDF upload (multer) + metadata (MongoDB)
-│  - Publishes jobs / questions to Redis
-│  - Subscribes to Redis for results, relays to frontend via SSE
-└─────────┬─────────┘
-          │ Redis PUBLISH / SUBSCRIBE only
-          │ (no direct HTTP calls to python-ai)
-          ▼
-┌──────────────────┐
-│   Redis Pub/Sub    │
-│  Channels:
-│   - pdf_process_requests / pdf_process_responses
-│   - question_requests / question_responses
-└─────────┬─────────┘
-          ▼
-┌──────────────────┐
-│ Python AI Service  │  (FastAPI + LangChain + LangGraph)
-│  - Redis listener (background thread)
-│  - PDF extraction (pypdf) + chunking (RecursiveCharacterTextSplitter)
-│  - Embeddings (HuggingFace sentence-transformers, free — or OpenAI)
-│  - LangGraph RAG workflow (see below)
-└─────────┬─────────┘
-          ▼
-┌──────────────────┐        ┌──────────────────┐
-│   ChromaDB         │        │   MongoDB          │
-│  (vector store,     │        │  (Users, Documents, │
-│   persisted to disk)│        │   Chats)            │
-└──────────────────┘        └──────────────────┘
-```
+## 1. High-Level System Architecture
 
-## LangGraph workflow (mandatory)
+The application is split into distinct microservices. The Node.js backend handles traditional API duties, while a Python worker handles heavy AI tasks. **All communication between the backend and AI worker happens asynchronously via Redis Pub/Sub.**
 
-```
-Receive Question
-      │
-      ▼
-Retrieve Context   (similarity search against ChromaDB)
-      │
-      ▼
-Generate Answer    (streamed token-by-token via callback -> Redis -> SSE)
-      │
-      ▼
-Generate Suggested Questions  (3-5 follow-ups, JSON output)
-      │
-      ▼
-Return Response    (answer + sources + suggested questions)
+```mermaid
+flowchart TD
+    Client[Next.js Client UI]
+    
+    subgraph Backend[Node.js Express Backend]
+        API[REST API / SSE]
+        Auth[JWT Auth]
+        Uploads[Multer PDF Upload]
+    end
+    
+    subgraph Broker[Redis Message Broker]
+        RedisPubSub{{Redis Pub/Sub}}
+    end
+    
+    subgraph Worker[Python AI Worker]
+        FastAPI[FastAPI Lifecycle]
+        LangGraph[LangGraph Engine]
+        PyPDF[PDF Extraction]
+        Embeddings[HuggingFace/OpenAI Embeddings]
+    end
+    
+    subgraph Databases[Data Storage]
+        Mongo[(MongoDB)]
+        Chroma[(ChromaDB)]
+    end
+
+    Client -- REST / SSE --> API
+    API <--> Auth & Uploads
+    API -- Reads/Writes --> Mongo
+    
+    API -- Publish (Job/Query) --> RedisPubSub
+    RedisPubSub -- Subscribe --> Worker
+    Worker -- Publish (Result/Tokens) --> RedisPubSub
+    RedisPubSub -- Subscribe --> API
+    
+    Worker <--> Chroma
 ```
 
-This is implemented as a `StateGraph` in `python-ai/app/graph.py` with one
-node per stage, wired together with `add_edge`, matching the assignment's
-required flow exactly.
+## 2. PDF Ingestion Sequence
 
-## Redis Pub/Sub contract (mandatory — no direct HTTP between backend and AI service)
+When an admin uploads a PDF, the file is saved locally (or to cloud storage), and an asynchronous job is dispatched to process it into the vector database.
 
-### PDF processing
-- Backend publishes to `pdf_process_requests`:
+```mermaid
+sequenceDiagram
+    actor Admin
+    participant Frontend as Next.js Admin
+    participant API as Node.js Backend
+    participant Mongo as MongoDB
+    participant Redis as Redis Pub/Sub
+    participant Worker as Python AI
+    participant Chroma as ChromaDB
+
+    Admin->>Frontend: Upload PDF File
+    Frontend->>API: POST /api/documents/upload
+    API->>API: Save file to disk
+    API->>Mongo: Create Document (status: pending)
+    API->>Redis: PUBLISH `pdf_process_requests`
+    API-->>Frontend: 202 Accepted (Document ID)
+    
+    Redis-->>Worker: Receive Job Message
+    Worker->>Worker: Extract text (pypdf)
+    Worker->>Worker: Chunk text (RecursiveCharacterTextSplitter)
+    Worker->>Worker: Generate Embeddings
+    Worker->>Chroma: Store Vectors & Metadata
+    
+    Worker->>Redis: PUBLISH `pdf_process_responses` (success)
+    Redis-->>API: Receive Result Message
+    API->>Mongo: Update Document (status: processed)
+```
+
+## 3. LangGraph RAG Workflow
+
+When a user asks a question, the Python service utilizes a LangGraph `StateGraph` to orchestrate the Retrieval-Augmented Generation process.
+
+```mermaid
+flowchart TD
+    Start((Start))
+    Receive[Receive Question & History]
+    Retrieve[Retrieve Context from ChromaDB]
+    Answer[Generate Streamed Answer]
+    Suggest[Generate Suggested Questions]
+    End((Return Final Output))
+    
+    Start --> Receive
+    Receive --> Retrieve
+    Retrieve --> Answer
+    Answer -- Stream Tokens --> Redis[(Redis Pub/Sub)]
+    Answer --> Suggest
+    Suggest --> End
+    End --> Redis
+```
+
+## 4. Redis Pub/Sub Contract
+
+Direct HTTP communication between the Node.js backend and Python AI service is **strictly prohibited**. The following Redis channels define their interaction.
+
+### Document Processing
+- **Channel**: `pdf_process_requests` (Backend → AI)
   ```json
-  { "requestId": "uuid", "documentId": "...", "filePath": "uploads/x.pdf", "fileName": "x.pdf", "vectorCollectionId": "uuid" }
+  {
+    "requestId": "uuid-string",
+    "documentId": "mongo-document-id",
+    "filePath": "uploads/document.pdf",
+    "fileName": "document.pdf",
+    "vectorCollectionId": "uuid-string"
+  }
   ```
-- Python AI publishes to `pdf_process_responses`:
+- **Channel**: `pdf_process_responses` (AI → Backend)
   ```json
-  { "requestId": "uuid", "status": "success", "chunks": 42 }
+  {
+    "requestId": "uuid-string",
+    "status": "success | failed",
+    "chunks": 42,
+    "error": "Error message if failed"
+  }
   ```
 
-### Question answering (streamed)
-- Backend publishes to `question_requests`:
+### Chat Answering (Streaming)
+- **Channel**: `question_requests` (Backend → AI)
   ```json
-  { "requestId": "uuid", "sessionId": "...", "question": "...", "history": [{"question":"...","answer":"..."}] }
+  {
+    "requestId": "uuid-string",
+    "sessionId": "browser-session-id",
+    "question": "What is the policy?",
+    "history": [
+      { "question": "Previous Q", "answer": "Previous A" }
+    ]
+  }
   ```
-- Python AI publishes multiple messages to `question_responses` as the LLM generates:
+- **Channel**: `question_responses` (AI → Backend)
+  *(Tokens are streamed as they are generated by the LLM)*
   ```json
-  { "requestId": "uuid", "type": "chunk", "token": "The" }
-  { "requestId": "uuid", "type": "chunk", "token": " answer" }
-  { "requestId": "uuid", "type": "final", "answer": "...", "sources": [...], "suggestedQuestions": [...] }
+  {"requestId": "uuid-string", "type": "chunk", "token": "The"}
+  {"requestId": "uuid-string", "type": "chunk", "token": " answer"}
+  {"requestId": "uuid-string", "type": "final", "answer": "The answer...", "sources": [{"documentName": "doc.pdf", "page": 1}], "suggestedQuestions": ["Q1?", "Q2?"]}
   ```
 
-The backend maintains an in-memory map of `requestId -> SSE response object`
-(for questions) or `requestId -> Promise` (for PDF processing) so multiple
-concurrent requests can be multiplexed over the same Redis connection safely.
+## 5. Database Schema
 
-## Database schema
+### MongoDB: `users`
+| Field | Type | Description |
+|-------|------|-------------|
+| `_id` | ObjectId | Primary Key |
+| `email` | String | Unique identifier |
+| `password` | String | bcrypt hashed password |
+| `role` | String | e.g., `"admin"` |
+| `createdAt`| Date | Record creation timestamp |
 
-**users**
-| field    | type   | notes            |
-|----------|--------|------------------|
-| _id      | ObjectId |                |
-| email    | string | unique           |
-| password | string | bcrypt hash      |
-| role     | string | "admin"          |
-| createdAt| Date   |                  |
+### MongoDB: `knowledgedocuments`
+| Field | Type | Description |
+|-------|------|-------------|
+| `_id` | ObjectId | Primary Key |
+| `fileName` | String | Unique filename stored on disk |
+| `originalName` | String | Original filename from user upload |
+| `filePath` | String | Relative path on server storage |
+| `fileSize` | Number | Size in bytes |
+| `uploadDate` | Date | Timestamp of upload |
+| `processingStatus`| String | `pending` \| `processing` \| `processed` \| `failed` |
+| `chunkCount` | Number | Total vector chunks stored in ChromaDB |
+| `errorMessage` | String | Populated if `processingStatus` is `failed` |
+| `vectorCollectionId`| String | Metadata UUID used to scope/filter vectors in ChromaDB |
 
-**knowledgedocuments** (Documents collection from the spec)
-| field             | type   | notes                                |
-|-------------------|--------|---------------------------------------|
-| _id               | ObjectId |                                     |
-| fileName          | string | stored filename on disk               |
-| originalName      | string | original uploaded filename            |
-| filePath          | string | path on disk                          |
-| fileSize          | number | bytes                                 |
-| uploadDate        | Date   |                                        |
-| processingStatus  | string | pending / processing / processed / failed |
-| chunkCount        | number | number of chunks stored in Chroma     |
-| errorMessage      | string | populated if processing failed        |
-| vectorCollectionId| string | metadata key used to filter/delete vectors in Chroma |
-
-**chats**
-| field              | type     | notes                          |
-|--------------------|----------|---------------------------------|
-| _id                | ObjectId |                                |
-| sessionId          | string   | groups a conversation           |
-| question           | string   |                                |
-| answer             | string   |                                |
-| sources            | array    | `{documentName, page}[]`        |
-| suggestedQuestions | array    | `string[]`                      |
-| timestamp          | Date     |                                |
+### MongoDB: `chats`
+| Field | Type | Description |
+|-------|------|-------------|
+| `_id` | ObjectId | Primary Key |
+| `sessionId` | String | Groups conversation turns by client session |
+| `question` | String | User's prompt |
+| `answer` | String | AI's final generated answer |
+| `sources` | Array of Objects | `[{ documentName: String, page: Number }]` |
+| `suggestedQuestions`| Array of Strings | Contextual follow-up questions generated by AI |
+| `timestamp` | Date | Timestamp of the interaction |

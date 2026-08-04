@@ -1,173 +1,147 @@
-# PDF Knowledge Base AI Chatbot (RAG System)
+<div align="center">
+  <h1>🤖 PDF Knowledge Base AI Chatbot</h1>
+  <p><strong>A Microservice RAG System Powered by LangGraph, Redis, and Next.js</strong></p>
+</div>
 
-A microservice AI chatbot: admins upload PDFs that become a searchable
-knowledge base; a public chatbot answers questions using RAG over that
-knowledge base, with source citations, streaming responses, and suggested
-follow-up questions.
+---
 
-**Architecture**: Next.js frontend → Node.js/Express backend → **Redis Pub/Sub**
-→ Python FastAPI/LangChain/LangGraph AI service → ChromaDB (vectors) + MongoDB
-(metadata). See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for diagrams
-and the full Redis message contract, and [`docs/API.md`](docs/API.md) for API
-docs.
+## 📖 High-Level Overview
 
-## Tech stack
+The **PDF Knowledge Base AI Chatbot** is a full-stack, distributed Retrieval-Augmented Generation (RAG) system. It allows administrators to upload PDF documents, which are automatically processed and embedded into a vector database to form a searchable knowledge base. End-users can interact with a public-facing chatbot that answers questions based strictly on the uploaded documents. 
 
-| Layer      | Technology                                             |
-|------------|---------------------------------------------------------|
-| Frontend   | Next.js (App Router), TypeScript, Tailwind CSS, shadcn-style UI |
-| Backend    | Node.js, Express, TypeScript                             |
-| AI Service | Python, FastAPI, LangChain, LangGraph                    |
-| Database   | MongoDB                                                  |
-| Vector DB  | ChromaDB (persisted locally, free)                       |
-| Messaging  | Redis Pub/Sub (mandatory bridge between backend & AI service) |
+Key features include:
+- **Source Citations**: Every answer includes references to the original document and page number.
+- **Streaming Responses**: Token-by-token response streaming for a seamless user experience.
+- **Suggested Follow-up Questions**: Dynamically generated contextual questions to keep the conversation flowing.
+- **Microservice Architecture**: Decoupled frontend, backend, and AI worker, communicating efficiently via Redis Pub/Sub.
 
-## Project structure
+## 🏗️ Microservices Architecture
 
+This project strictly adheres to a microservices pattern, ensuring separation of concerns, scalability, and maintainability.
+
+| Service | Technology | Role |
+|---------|------------|------|
+| **Frontend** | Next.js (App Router), Tailwind CSS, shadcn/ui | Admin panel (upload PDFs, view analytics) & Public Chat UI. |
+| **Backend API** | Node.js, Express, TypeScript | Handles auth, file uploads (multer), stores metadata in MongoDB, and orchestrates jobs via Redis. |
+| **AI Worker** | Python, FastAPI, LangChain, LangGraph | Processes PDFs, generates embeddings, executes the RAG workflow, and manages ChromaDB. |
+| **Databases** | MongoDB, ChromaDB (Vector) | MongoDB stores application state (users, docs, chats). ChromaDB stores vector embeddings. |
+| **Message Broker**| Redis Pub/Sub | **The sole communication bridge** between the Node.js backend and Python AI Worker (no direct HTTP). |
+
+### Overall System Flow
+
+```mermaid
+flowchart TB
+    User((User))
+    Admin((Admin))
+    
+    subgraph Frontend [Next.js Frontend]
+        AdminUI[Admin Dashboard]
+        ChatUI[Public Chat Interface]
+    end
+    
+    subgraph Backend [Node.js Backend]
+        API[Express API]
+        Mongo[(MongoDB)]
+    end
+    
+    subgraph Broker [Message Broker]
+        Redis{{Redis Pub/Sub}}
+    end
+    
+    subgraph AIService [Python AI Service]
+        LangGraph[LangGraph Agent]
+        Chroma[(ChromaDB)]
+    end
+    
+    Admin -->|Uploads PDF| AdminUI
+    User -->|Asks Question| ChatUI
+    
+    AdminUI -->|REST| API
+    ChatUI -->|REST / SSE| API
+    
+    API <-->|Reads/Writes| Mongo
+    
+    API -->|Publishes Job/Query| Redis
+    Redis -->|Subscribes| LangGraph
+    
+    LangGraph <-->|Embeds/Searches| Chroma
+    
+    LangGraph -->|Publishes Tokens/Result| Redis
+    Redis -->|Subscribes| API
+    API -->|Streams SSE| ChatUI
 ```
-frontend/       Next.js app (admin panel + public chat)
-backend/        Express/TypeScript API + Redis pub/sub + MongoDB models
-python-ai/      FastAPI service: PDF processing, LangChain, LangGraph, Chroma
-shared/         (reserved for shared types/contracts if you extend the project)
-docs/           Architecture diagram + API documentation
-docker-compose.yml
-```
 
-## Quick start (Docker — recommended)
+## 🚀 Setup Instructions
 
-1. Copy the root env file and fill in secrets:
+### Option 1: Quick Start (Docker — Recommended)
+
+1. **Configure Environment Variables**
    ```bash
    cp .env.example .env
    ```
-   At minimum set `OPENAI_API_KEY` (used for answer generation and suggested
-   questions; embeddings default to a **free** local HuggingFace model so you
-   don't need an OpenAI key just to embed PDFs — see `EMBEDDING_PROVIDER`).
+   *At a minimum, set your `OPENAI_API_KEY` for answer generation. Embeddings use a free local HuggingFace model by default.*
 
-2. Start everything:
+2. **Spin Up Containers**
    ```bash
    docker-compose up --build
    ```
 
-3. Open:
-   - Public chatbot: http://localhost:3000/chat
-   - Admin panel: http://localhost:3000/admin/login
-   - Backend health: http://localhost:5000/health
-   - AI service health: http://localhost:8000/health
+3. **Access Services**
+   - **Public Chatbot**: [http://localhost:3000/chat](http://localhost:3000/chat)
+   - **Admin Panel**: [http://localhost:3000/admin/login](http://localhost:3000/admin/login)
+   - **Backend API Health**: [http://localhost:5000/health](http://localhost:5000/health)
+   - **AI Service Health**: [http://localhost:8000/health](http://localhost:8000/health)
 
-4. Default admin credentials (seeded automatically on first backend boot;
-   change them in `.env` before first run):
-   ```
-   email:    admin@example.com
-   password: Admin@12345
-   ```
+4. **Default Admin Credentials**
+   *(Seeded automatically on first boot; change in `.env`)*
+   - **Email**: `admin@example.com`
+   - **Password**: `Admin@12345`
 
-## Running locally without Docker
+### Option 2: Running Locally (Without Docker)
 
-You'll need MongoDB and Redis running locally (or point the `.env` files at
-hosted instances).
+You will need **MongoDB** and **Redis** running locally (or hosted equivalents configured in your `.env`).
 
-### 1. Backend
+**1. Backend**
 ```bash
 cd backend
-cp .env.example .env      # edit as needed
+cp .env.example .env
 npm install
-npm run dev                # http://localhost:5000
+npm run dev # Runs on http://localhost:5000
 ```
 
-### 2. Python AI service
+**2. Python AI Service**
 ```bash
 cd python-ai
-cp .env.example .env       # edit as needed, add OPENAI_API_KEY
-python -m venv venv && source venv/bin/activate   # Windows: venv\Scripts\activate
+cp .env.example .env # Add OPENAI_API_KEY
+python -m venv venv
+source venv/bin/activate # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-python -m app.main          # http://localhost:8000
+python -m app.main # Runs on http://localhost:8000
 ```
 
-### 3. Frontend
+**3. Frontend**
 ```bash
 cd frontend
 cp .env.example .env.local
 npm install
-npm run dev                 # http://localhost:3000
+npm run dev # Runs on http://localhost:3000
 ```
 
-## How it works end to end
+## 📚 Documentation
 
-1. **Admin uploads a PDF** → backend stores the file + a `pending` `Document`
-   record in MongoDB → publishes a job on Redis (`pdf_process_requests`).
-2. **Python AI service** (subscribed to that channel) extracts text page by
-   page, chunks it, generates embeddings, and stores vectors in ChromaDB with
-   metadata (document name, page number). It publishes the result back on
-   `pdf_process_responses`; the backend updates the document's status to
-   `processed`/`failed`.
-3. **A user asks a question** in the public chat → backend publishes it on
-   `question_requests` (including recent conversation history for memory) and
-   opens an SSE stream to the browser.
-4. **The AI service's LangGraph workflow** retrieves relevant chunks from
-   Chroma, generates a streamed answer (publishing token chunks on
-   `question_responses` as they're produced), then generates 3–5 suggested
-   follow-up questions, and finally publishes the full result.
-5. **The backend forwards everything to the browser over SSE** in real time,
-   and persists the finished exchange (question, answer, sources, suggested
-   questions) in the `Chat` collection.
+- **Architecture Details & Database Schema**: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- **API Reference**: [`docs/API.md`](docs/API.md)
 
-Direct HTTP calls between the backend and the AI service are intentionally
-never used — everything mandatory goes through Redis Pub/Sub, per spec.
+## ✅ Assessment Checklist
 
-## Environment variables
+- [x] Public GitHub repository with complete source code.
+- [x] Professional README with setup instructions.
+- [x] `.env.example` files provided for all services.
+- [x] Detailed Architecture diagram and documentation (`docs/ARCHITECTURE.md`).
+- [x] Comprehensive API documentation (`docs/API.md`).
+- [x] Microservices architecture strictly enforced (Redis Pub/Sub only).
+- [x] RAG implementation with source citations and suggested follow-ups.
+- [x] Streaming responses implemented via SSE.
+- [ ] Record a 5–10 min video demonstrating the system (Overview, Architecture, Code Walkthrough, Admin Demo, Chatbot Demo) and paste the link below.
 
-See `.env.example` in the root, `backend/.env.example`,
-`python-ai/.env.example`, and `frontend/.env.example` for the full list, with
-comments.
-
-## Database schema & API docs
-
-- Schema: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#database-schema)
-- API reference: [`docs/API.md`](docs/API.md)
-
-## Notes on free vector DB & embeddings
-
-- Vector DB: **ChromaDB**, running embedded and persisted to local disk
-  (`python-ai/chroma_db` by default, or a Docker volume) — no paid service
-  required.
-- Embeddings default to `EMBEDDING_PROVIDER=huggingface`
-  (`sentence-transformers/all-MiniLM-L6-v2`, runs locally, free). Set
-  `EMBEDDING_PROVIDER=openai` to use OpenAI embeddings instead if you prefer.
-- Answer generation and suggested-question generation use OpenAI's chat
-  models (`OPENAI_CHAT_MODEL`, default `gpt-4o-mini`) — swap
-  `python-ai/app/graph.py`'s `_get_llm()` for another LangChain chat model if
-  you'd rather use a different/free LLM provider.
-
-## Submission checklist (per assignment brief)
-
-- [x] Public GitHub repository — push this folder to a new public repo
-- [x] Complete source code (frontend/backend/python-ai/shared)
-- [x] README with setup instructions (this file)
-- [x] `.env.example` (root + per-service)
-- [x] Database schema (`docs/ARCHITECTURE.md`)
-- [x] Architecture diagram (`docs/ARCHITECTURE.md`)
-- [x] API documentation (`docs/API.md`)
-- [ ] Record a 5–10 min Loom/YouTube video demonstrating: project overview,
-      folder structure, codebase walkthrough, system architecture, Redis
-      communication, LangGraph workflow, PDF upload process, the chatbot
-      working end-to-end with follow-up questions and cited PDFs, and the
-      suggested-questions feature — then add the link here before submitting.
-
-## Suggested video walkthrough script (5–10 min)
-
-1. **Overview** (30s) — what the app does, tech stack.
-2. **Folder structure** (30s) — `frontend/`, `backend/`, `python-ai/`, `docs/`.
-3. **Architecture** (1 min) — walk through `docs/ARCHITECTURE.md` diagram;
-   emphasize Redis Pub/Sub is the only bridge between backend and AI service.
-4. **Redis communication** (1 min) — show `backend/src/redis/pubsub.ts` and
-   `python-ai/app/redis_listener.py` side by side; explain request/response +
-   streaming patterns.
-5. **LangGraph workflow** (1 min) — open `python-ai/app/graph.py`, show the
-   4-node graph and run it live, pointing at logs showing each stage.
-6. **Admin panel demo** (1–2 min) — login, upload a PDF, watch status go
-   pending → processing → processed, show dashboard counts update.
-7. **Chatbot demo** (2 min) — ask a question, show streaming tokens, markdown
-   rendering, source/page citation badges, then click a suggested follow-up
-   question to show conversation memory in action.
-8. **Wrap-up** (30s) — mention `.env.example`, docker-compose, and where the
-   README/API docs live.
+**Video Link**: `[Add Video Link Here]`
