@@ -234,6 +234,45 @@ Retrieves the conversation history for a specific session to provide contextual 
 }
 ```
 
+### `GET /api/chat/sessions` (Admin Only)
+Retrieves an aggregated list of all chat sessions for the admin dashboard.
+
+**Headers**
+- `Authorization: Bearer <token>` (Optional if cookie is present)
+
+**Response** `200 OK`
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "usr-browser-uuid-1234",
+      "firstQuestion": "What is the standard PTO allowance?",
+      "messageCount": 4,
+      "startTime": "2023-10-02T10:15:00Z",
+      "lastTime": "2023-10-02T10:18:00Z"
+    }
+  ]
+}
+```
+
+### `DELETE /api/chat/sessions/:sessionId` (Admin Only)
+Permanently deletes a chat session and all its associated messages from the database.
+
+**Path Parameters**
+- `sessionId`: The unique identifier for the user's chat session.
+
+**Headers**
+- `Authorization: Bearer <token>` (Optional if cookie is present)
+
+**Response** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Session deleted successfully"
+}
+```
+
 ---
 
 ## 🩺 System Health
