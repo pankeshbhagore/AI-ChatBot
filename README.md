@@ -87,8 +87,8 @@ flowchart TB
    ```
 
 3. **Access Services**
-   - **Public Chatbot**: [http://localhost:3000/chat](http://localhost:3000/chat)
-   - **Admin Panel**: [http://localhost:3000/admin/login](http://localhost:3000/admin/login)
+   - **Public Chatbot**: [http://localhost:3001/chat](http://localhost:3001/chat)
+   - **Admin Panel**: [http://localhost:3001/admin/login](http://localhost:3001/admin/login)
    - **Backend API Health**: [http://localhost:5000/health](http://localhost:5000/health)
    - **AI Service Health**: [http://localhost:8000/health](http://localhost:8000/health)
 
