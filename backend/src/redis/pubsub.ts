@@ -16,7 +16,7 @@ import { env } from "../config/env";
 
 // Separate connections: ioredis requires a dedicated connection for subscribing.
 export const publisher = new Redis(env.redisUrl);
-export const subscriber = new Redis(env.redisUrl);
+export const subscriber = new Redis(env.redisUrl, { enableReadyCheck: false });
 
 type PendingResolver = {
   resolve: (value: any) => void;
@@ -123,9 +123,32 @@ export function publishAndStream(
   handlers: StreamHandlers
 ): string {
   const requestId = uuidv4();
-  streamingRequests.set(requestId, handlers);
+
+  // Safety timeout: if the AI service crashes or hangs, clean up after a period.
+  const timeout = setTimeout(() => {
+    if (streamingRequests.has(requestId)) {
+      streamingRequests.delete(requestId);
+      handlers.onError("AI service timed out. Please try again.");
+    }
+  }, env.redisResponseTimeoutMs);
+
+  // Wrap handlers to clear the timeout when a terminal event arrives.
+  const wrappedHandlers: StreamHandlers = {
+    onChunk: (token) => handlers.onChunk(token),
+    onFinal: (payload) => {
+      clearTimeout(timeout);
+      handlers.onFinal(payload);
+    },
+    onError: (message) => {
+      clearTimeout(timeout);
+      handlers.onError(message);
+    },
+  };
+
+  streamingRequests.set(requestId, wrappedHandlers);
 
   publisher.publish(channel, JSON.stringify({ requestId, ...data })).catch((err) => {
+    clearTimeout(timeout);
     streamingRequests.delete(requestId);
     handlers.onError(err.message);
   });

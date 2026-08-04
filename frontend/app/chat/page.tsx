@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { TypingIndicator, SuggestedQuestions } from "@/components/chat/SuggestedQuestions";
-import { streamAskQuestion, type Source } from "@/lib/api";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { streamAskQuestion, apiFetch, type Source } from "@/lib/api";
 
 interface Message {
   role: "user" | "assistant";
@@ -32,6 +33,30 @@ export default function ChatPage() {
     }
     setSessionId(id);
   }, []);
+
+  // Restore conversation from the database so it survives page refresh.
+  useEffect(() => {
+    if (!sessionId) return;
+    apiFetch(`/api/chat/history/${sessionId}`)
+      .then((res) => {
+        if (res.history && res.history.length > 0) {
+          const restored: Message[] = [];
+          for (const entry of res.history) {
+            restored.push({ role: "user", content: entry.question });
+            restored.push({
+              role: "assistant",
+              content: entry.answer,
+              sources: entry.sources || [],
+            });
+          }
+          setMessages(restored);
+          setSuggested(res.history[res.history.length - 1]?.suggestedQuestions || []);
+        }
+      })
+      .catch(() => {
+        // Silently ignore — first visit or backend unreachable.
+      });
+  }, [sessionId]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -87,14 +112,15 @@ export default function ChatPage() {
 
   return (
     <div className="mx-auto flex h-screen flex-col overflow-hidden bg-background">
-      <header className="relative z-10 flex h-16 items-center gap-3 bg-gradient-to-r from-violet-600/20 via-indigo-600/20 to-purple-600/20 px-6 backdrop-blur-md border-b border-white/5 shadow-lg">
+      <header className="relative z-10 flex h-16 items-center gap-3 bg-gradient-to-r from-violet-600/20 via-indigo-600/20 to-purple-600/20 px-6 backdrop-blur-md border-b border-black/5 dark:border-white/5 shadow-lg">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 shadow-lg shadow-violet-500/20">
           <Sparkles className="h-5 w-5 text-white" />
         </div>
-        <h1 className="text-lg font-semibold tracking-tight text-white/90">Knowledge Base Assistant</h1>
+        <h1 className="text-lg font-semibold tracking-tight text-foreground">Knowledge Base Assistant</h1>
         
-        <div className="ml-auto">
-          <a href="/" className="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors text-white/70 hover:bg-white/10 hover:text-white px-3">
+        <div className="ml-auto flex items-center gap-2">
+          <ThemeToggle />
+          <a href="/" className="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors text-foreground/70 hover:bg-black/10 dark:hover:bg-white/10 hover:text-foreground px-3">
             Home
           </a>
         </div>

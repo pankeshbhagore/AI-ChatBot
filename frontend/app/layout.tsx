@@ -1,16 +1,28 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
-  title: "Knowledge Base AI Chatbot",
-  description: "RAG-powered chatbot over your uploaded PDF knowledge base",
+  title: "Knowledge Base AI",
+  description: "Chat with your PDF documents",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en" className="dark">
-      <body className="min-h-screen bg-background antialiased font-sans text-foreground">
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <body className="antialiased font-sans min-h-screen">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
@@ -15,6 +16,7 @@ import chatRoutes from "./routes/chat.routes";
 
 const app = express();
 
+app.use(helmet());
 app.use(cors({ origin: env.frontendOrigin, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
@@ -41,9 +43,23 @@ async function seedAdmin() {
   }
 }
 
+async function connectWithRetry(uri: string, retries = 5, delayMs = 3000): Promise<void> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      await mongoose.connect(uri);
+      console.log("[mongo] Connected");
+      return;
+    } catch (err) {
+      console.warn(`[mongo] Connection attempt ${attempt}/${retries} failed. Retrying in ${delayMs / 1000}s...`);
+      if (attempt === retries) throw err;
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      delayMs *= 2; // exponential backoff
+    }
+  }
+}
+
 async function bootstrap() {
-  await mongoose.connect(env.mongoUri);
-  console.log("[mongo] Connected");
+  await connectWithRetry(env.mongoUri);
 
   initRedisSubscriptions();
 

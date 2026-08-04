@@ -6,6 +6,35 @@
 
 @layer base {
   :root {
+    --background: 0 0% 98%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 262 83% 58%; /* Using violet for accent too */
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 262 83% 58%;
+    --radius: 0.75rem;
+
+    /* Light mode gradient background */
+    --bg-grad-1: #fdfbfb;
+    --bg-grad-2: #ebedee;
+    --bg-grad-3: #fdfbfb;
+    --bg-grad-4: #f4f4f4;
+  }
+ 
+  .dark {
     --background: 240 10% 4%;
     --foreground: 0 0% 98%;
     --card: 240 10% 6%;
@@ -25,7 +54,12 @@
     --border: 240 5% 20%;
     --input: 240 5% 20%;
     --ring: 262 83% 58%;
-    --radius: 0.75rem;
+
+    /* Dark mode gradient background */
+    --bg-grad-1: #09090b;
+    --bg-grad-2: #120f18;
+    --bg-grad-3: #0a0a0c;
+    --bg-grad-4: #0d0b14;
   }
 }
 
@@ -34,10 +68,10 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-300;
     font-family: 'Inter', sans-serif;
-    /* Subtle gradient background animation */
-    background: linear-gradient(-45deg, #09090b, #120f18, #0a0a0c, #0d0b14);
+    /* Subtle gradient background animation based on theme */
+    background: linear-gradient(-45deg, var(--bg-grad-1), var(--bg-grad-2), var(--bg-grad-3), var(--bg-grad-4));
     background-size: 400% 400%;
     animation: gradientBG 15s ease infinite;
   }
@@ -58,19 +92,18 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  @apply bg-black/10 dark:bg-white/10 rounded-full;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  @apply bg-black/20 dark:bg-white/20;
 }
 
 @layer utilities {
   .glass-card {
-    @apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.06] shadow-xl;
+    @apply bg-white/60 dark:bg-white/[0.03] backdrop-blur-xl border border-black/5 dark:border-white/[0.06] shadow-xl transition-colors duration-300;
   }
   .glass-sidebar {
-    @apply bg-background/60 backdrop-blur-2xl border-r border-white/[0.05] shadow-[0_0_40px_rgba(139,92,246,0.05)];
+    @apply bg-white/80 dark:bg-background/60 backdrop-blur-2xl border-r border-black/5 dark:border-white/[0.05] shadow-[0_0_40px_rgba(139,92,246,0.05)] transition-colors duration-300;
   }
 }
 
@@ -94,6 +127,7 @@
 
 .typing-dot {
   animation: typing-bounce 1.2s infinite ease-in-out;
+  @apply bg-black/50 dark:bg-white/50;
 }
 .typing-dot:nth-child(2) { animation-delay: 0.15s; }
 .typing-dot:nth-child(3) { animation-delay: 0.3s; }
@@ -113,10 +147,10 @@
   @apply text-primary hover:text-primary/80 transition-colors;
 }
 .prose code {
-  @apply bg-white/10 px-1.5 py-0.5 rounded text-sm text-primary-foreground;
+  @apply bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded text-sm text-foreground dark:text-primary-foreground;
 }
 .prose pre {
-  @apply bg-black/40 border border-white/10 rounded-lg p-4 overflow-x-auto my-4;
+  @apply bg-black/5 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-lg p-4 overflow-x-auto my-4;
 }
 .prose pre code {
   @apply bg-transparent p-0 text-sm;

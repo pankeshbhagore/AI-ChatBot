@@ -37,6 +37,18 @@ def _handle_pdf_message(publisher: redis.Redis, payload: dict):
         vector_collection_id = payload["vectorCollectionId"]
 
         chunks, pages = pdf_processor.chunk_document(file_path)
+
+        # Fail explicitly for scanned / image-only PDFs that yield no text.
+        if not chunks:
+            raise ValueError(
+                "No readable text found in this PDF. "
+                "Scanned or image-only documents are not supported without OCR."
+            )
+
+        # Delete any existing vectors for this document first (idempotent).
+        # This prevents duplicate vectors when reprocessing a PDF.
+        vectorstore.delete_document(vector_collection_id)
+
         count = vectorstore.add_chunks(document_id, document_name, vector_collection_id, chunks, pages)
 
         publisher.publish(
